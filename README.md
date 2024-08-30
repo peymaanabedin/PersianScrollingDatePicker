@@ -1,6 +1,9 @@
 # PersianScrollingDatePicker
 pure JavaScript and Tailwind CSS Persian (Jalali) date picker with  scrolling style Created By Peymaan Abedinpour
 
+![Persian (Jalali) date picker with  scrolling style Created By Peymaan Abedinpour](https://raw.githubusercontent.com/peymaanabedin/PersianScrollingDatePicker/main/persianScrollingdatepicker.jpg)
+
+
 Welcome to the Scrolling Persian Date Picker project! This tool was created by **Peymaan Abedinpour** and is the **first Persian date picker with a scrolling style** built using pure JavaScript, jQuery, and TailwindCSS. Designed specifically for the Persian (Jalali) calendar, this date picker offers a smooth scrolling mechanism and an intuitive user interface for selecting dates, reminiscent of native iOS-style pickers. It is **fully optimized for mobile devices**, providing a seamless and user-friendly experience for all users interacting with the Persian calendar across all platforms.
 
 #### Features
