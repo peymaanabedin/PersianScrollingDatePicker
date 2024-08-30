@@ -1,0 +1,322 @@
+<!--pure JavaScript and Tailwind CSS Persian (Jalali) date picker with scrolling style Created By © Peymaan Abedinpour @2024 -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Metadata -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Persian Date Picker</title>
+
+    <!-- Import external resources -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/jalaali-js/dist/jalaali.js"></script>
+  </head>
+  <body
+    class="font-sans bg-gray-100 flex items-center justify-center h-screen overflow-hidden"
+  >
+    <!-- Input field for the date picker -->
+    <input
+      type="text"
+      id="deliveryDate"
+      class="block w-72 max-w-xs mx-auto p-3 text-center text-base border border-gray-300 rounded-lg shadow-sm cursor-pointer"
+      readonly
+    />
+
+    <script>
+      $(document).ready(function () {
+        /**
+         *
+         *
+         *pure JavaScript and Tailwind CSS Persian (Jalali) date *picker with scrolling style Created By Peymaan Abedinpour
+         * @2024
+         *
+         * Function to dynamically create the modal HTML for the date picker.
+         * This function appends the modal to the body of the document.
+         */
+        function createDatePickerModal() {
+          const modalHTML = `
+          <div id="datePickerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg max-w-sm w-full mx-4 text-center shadow-lg relative">
+              <div class="flex justify-center space-x-4 mb-4">
+                <div id="pdp-year" class="flex-1 max-w-[80px] h-72 rounded-lg bg-gray-200 shadow-inner overflow-hidden relative"></div>
+                <div id="pdp-month" class="flex-1 max-w-[80px] h-72 rounded-lg bg-gray-200 shadow-inner overflow-hidden relative"></div>
+                <div id="pdp-day" class="flex-1 max-w-[80px] h-72 rounded-lg bg-gray-200 shadow-inner overflow-hidden relative"></div>
+              </div>
+              <button id="confirmDate" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg mb-3 transition duration-200">تایید</button>
+              <button id="closeModal" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg transition duration-200">بستن</button>
+            </div>
+          </div>`;
+          document.body.insertAdjacentHTML("beforeend", modalHTML);
+        }
+
+        /**
+         * Function to initialize the Persian Date Picker.
+         * @param {string} inputId - The ID of the input element to attach the date picker to.
+         */
+        function initializePersianDatePicker(inputId) {
+          createDatePickerModal(); // Create modal dynamically
+
+          const today = jalaali.toJalaali(new Date());
+          const modal = document.getElementById("datePickerModal");
+          const body = document.body;
+
+          // Helper functions for modal display control
+          const openModal = () => {
+            modal.classList.remove("hidden");
+            body.style.overflow = "hidden";
+          };
+
+          const closeModal = () => {
+            modal.classList.add("hidden");
+            body.style.overflow = "";
+          };
+
+          /**
+           * Sets up event listeners for the date picker elements and modal controls.
+           */
+          function setupEventListeners() {
+            document
+              .getElementById(inputId)
+              .addEventListener("click", openModal);
+            document
+              .getElementById("closeModal")
+              .addEventListener("click", closeModal);
+
+            window.addEventListener("click", (event) => {
+              if (event.target === modal) {
+                closeModal();
+              }
+            });
+
+            document
+              .getElementById("confirmDate")
+              .addEventListener("click", () => {
+                const selectedYear = parseInt(yearSelector.getValue());
+                const selectedMonth = parseInt(monthSelector.getValue());
+                const selectedDay = parseInt(daySelector.getValue());
+
+                // Format the date to ensure leading zeros
+                const formattedDate = (date) => (date < 10 ? `0${date}` : date);
+
+                // Set the selected date in the input field
+                document.getElementById(
+                  inputId
+                ).value = `${selectedYear}-${formattedDate(
+                  selectedMonth
+                )}-${formattedDate(selectedDay)}`;
+                closeModal();
+              });
+          }
+
+          /**
+           * IosSelector class to simulate an iOS-style date picker selector.
+           */
+          class IosSelector {
+            constructor(options) {
+              this.el = document.querySelector(options.el);
+              this.source = options.source;
+              this.selectedIndex = options.selectedIndex || 0;
+              this.itemHeight = 40; // Height of each item in the selector
+              this.visibleRows = 7; // Number of visible rows in the selector
+              this.middleIndex = Math.floor(this.visibleRows / 2);
+              this._init();
+            }
+
+            // Initialize the selector by rendering the list and setting up event handlers
+            _init() {
+              this.el.innerHTML = `<ul class="absolute inset-0">${this.source
+                .map(
+                  (item, index) =>
+                    `<li data-index="${index}" class="text-lg leading-10 text-gray-700 opacity-30 transition-opacity">${item.text}</li>`
+                )
+                .join(
+                  ""
+                )}</ul><div class="absolute top-1/2 left-0 w-full h-10 -mt-5 border-t border-b border-gray-300 pointer-events-none"></div>`;
+
+              this.list = this.el.querySelector("ul");
+              this.items = this.el.querySelectorAll("li");
+              this.list.style.transform = `translateY(${
+                -(this.selectedIndex - this.middleIndex) * this.itemHeight
+              }px)`;
+              this._attachEvents();
+              this._updateFade();
+            }
+
+            // Attach necessary event handlers for touch and mouse events
+            _attachEvents() {
+              let startY = 0,
+                scrollStart = 0,
+                isDragging = false;
+
+              const onTouchStart = (e) => {
+                e.stopPropagation();
+                startY = e.touches ? e.touches[0].clientY : e.clientY;
+                scrollStart =
+                  parseFloat(
+                    this.list.style.transform.replace("translateY(", "")
+                  ) || 0;
+                this.list.style.transition = "none";
+                isDragging = true;
+              };
+
+              const onTouchMove = (e) => {
+                if (!isDragging) return;
+                e.stopPropagation();
+                let moveY =
+                  (e.touches ? e.touches[0].clientY : e.clientY) - startY;
+                this.list.style.transform = `translateY(${
+                  scrollStart + moveY
+                }px)`;
+              };
+
+              const onTouchEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                let finalScroll =
+                  parseFloat(
+                    this.list.style.transform.replace("translateY(", "")
+                  ) || 0;
+                let selectedIndex =
+                  Math.round(-finalScroll / this.itemHeight) + this.middleIndex;
+                selectedIndex = Math.max(
+                  0,
+                  Math.min(selectedIndex, this.source.length - 1)
+                );
+                this.select(selectedIndex);
+              };
+
+              const onWheel = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                let scrollAmount = e.deltaY;
+                let currentScroll =
+                  parseFloat(
+                    this.list.style.transform.replace("translateY(", "")
+                  ) || 0;
+                this.list.style.transition = "none";
+                this.list.style.transform = `translateY(${
+                  currentScroll - scrollAmount
+                }px)`;
+                let finalScroll =
+                  parseFloat(
+                    this.list.style.transform.replace("translateY(", "")
+                  ) || 0;
+                let selectedIndex =
+                  Math.round(-finalScroll / this.itemHeight) + this.middleIndex;
+                selectedIndex = Math.max(
+                  0,
+                  Math.min(selectedIndex, this.source.length - 1)
+                );
+                this.select(selectedIndex);
+              };
+
+              // Event listeners for dragging and scrolling
+              this.el.addEventListener("mousedown", onTouchStart);
+              document.addEventListener("mousemove", onTouchMove);
+              document.addEventListener("mouseup", onTouchEnd);
+              this.el.addEventListener("wheel", onWheel);
+              this.el.addEventListener("touchstart", onTouchStart);
+              this.el.addEventListener("touchmove", onTouchMove);
+              this.el.addEventListener("touchend", onTouchEnd);
+            }
+
+            // Method to select an item in the selector and update the view
+            select(index) {
+              this.selectedIndex = index;
+              this.list.style.transition = "transform 0.3s ease-out";
+              this.list.style.transform = `translateY(${
+                -(index - this.middleIndex) * this.itemHeight
+              }px)`;
+              this._updateFade();
+            }
+
+            // Updates the opacity of the items based on their distance from the center
+            _updateFade() {
+              this.items.forEach((item, i) => {
+                item.classList.toggle(
+                  "text-black",
+                  "opacity-100",
+                  i === this.selectedIndex
+                );
+                const distance = Math.abs(i - this.selectedIndex);
+                item.style.opacity =
+                  distance < this.middleIndex
+                    ? 1 - distance / this.middleIndex
+                    : 0.3;
+              });
+            }
+
+            // Get the currently selected value
+            getValue() {
+              return this.source[this.selectedIndex].value;
+            }
+          }
+
+          // Utility functions to generate date ranges and calculate days in a month
+          const getRange = (start, end) =>
+            Array.from({ length: end - start + 1 }, (_, i) => ({
+              value: start + i,
+              text: start + i,
+            }));
+          const getDays = (year, month) =>
+            getRange(1, jalaali.jalaaliMonthLength(year, month));
+
+          // Initialize date pickers for year, month, and day
+          let yearSelector = new IosSelector({
+            el: "#pdp-year",
+            source: getRange(1300, 1500),
+            selectedIndex: today.jy - 1300,
+          });
+
+          let monthSelector = new IosSelector({
+            el: "#pdp-month",
+            source: getRange(1, 12),
+            selectedIndex: today.jm - 1,
+          });
+
+          let daySelector = new IosSelector({
+            el: "#pdp-day",
+            source: getDays(today.jy, today.jm),
+            selectedIndex: today.jd - 1,
+          });
+
+          // Update the day selector when the year or month is changed
+          const updateDaySelector = () => {
+            const yearValue = parseInt(yearSelector.getValue());
+            const monthValue = parseInt(monthSelector.getValue());
+            const daysInMonth = getDays(yearValue, monthValue);
+
+            daySelector = new IosSelector({
+              el: "#pdp-day",
+              source: daysInMonth,
+              selectedIndex: Math.min(
+                daySelector.selectedIndex,
+                daysInMonth.length - 1
+              ),
+            });
+          };
+
+          // Event listeners to update day selector
+          yearSelector.el.addEventListener("mouseup", updateDaySelector);
+          monthSelector.el.addEventListener("mouseup", updateDaySelector);
+          yearSelector.el.addEventListener("touchend", updateDaySelector);
+          monthSelector.el.addEventListener("touchend", updateDaySelector);
+
+          // Initialize event listeners for modal and date picker
+          setupEventListeners();
+        }
+
+        // Initialize the date picker with the specified input element
+        initializePersianDatePicker("deliveryDate");
+      });
+    </script>
+  </body>
+</html>
